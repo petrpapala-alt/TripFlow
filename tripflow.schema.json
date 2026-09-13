@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TripFlow itinerary database",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "city", "country", "dates", "days"],
+    "properties": {
+      "id": {"type": "string"},
+      "city": {"type": "string"},
+      "country": {"type": "string"},
+      "dates": {"type": "string"},
+      "travelers": {"type": "string"},
+      "stay": {"type": "string"},
+      "budget": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["category", "amount", "currency"],
+          "properties": {
+            "category": {"type": "string"},
+            "amount": {"type": "number"},
+            "currency": {"type": "string"},
+            "paid": {"type": "boolean"}
+          }
+        }
+      },
+      "days": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": ["date", "title", "stops"],
+          "properties": {
+            "date": {"type": "string"},
+            "title": {"type": "string"},
+            "distance": {"type": "string"},
+            "walk": {"type": "string"},
+            "total": {"type": "string"},
+            "photo": {"type": "string"},
+            "stops": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["time", "name", "address"],
+                "properties": {
+                  "time": {"type": "string"},
+                  "name": {"type": "string"},
+                  "address": {"type": "string"},
+                  "type": {"enum": ["sight", "ticket", "food", "transport", "hotel", "other"]},
+                  "price": {"type": "string"},
+                  "booking": {"type": "string"},
+                  "reservationRequired": {"type": "boolean"},
+                  "reserved": {"type": "boolean"},
+                  "note": {"type": "string"}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

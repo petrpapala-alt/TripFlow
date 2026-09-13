@@ -1,0 +1,37 @@
+[
+  {
+    "id": "london-2027",
+    "city": "Londýn",
+    "country": "Velká Británie",
+    "dates": "20.–24. 5. 2027",
+    "travelers": "2 dospělí",
+    "stay": "Doplňte adresu ubytování",
+    "budget": [
+      {"category": "Letenky", "amount": 0, "currency": "CZK", "paid": false},
+      {"category": "Ubytování", "amount": 0, "currency": "CZK", "paid": false}
+    ],
+    "days": [
+      {
+        "date": "Čt 20. 5.",
+        "title": "Přílet a centrum",
+        "distance": "0 km",
+        "walk": "0 min",
+        "total": "odpoledne",
+        "photo": "",
+        "stops": [
+          {
+            "time": "15:00",
+            "name": "První zastávka",
+            "address": "Přesná adresa, London",
+            "type": "sight",
+            "price": "Zdarma",
+            "booking": "",
+            "reservationRequired": false,
+            "reserved": false,
+            "note": ""
+          }
+        ]
+      }
+    ]
+  }
+]
