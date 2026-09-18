@@ -1,38 +1,53 @@
 <!doctype html>
 <html lang="cs">
-
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#1d3143">
+  <meta charset="utf-8" />
 
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="TripFlow">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  />
 
-  <meta name="description"
-        content="Osobní mobilní itineráře s trasami, vstupy a rezervacemi.">
+  <meta name="theme-color" content="#1d3143" />
 
-  <link rel="manifest" href="manifest.webmanifest">
-  icons/icon.svg
-  icons/icon-192.png
+  <meta
+    name="description"
+    content="Osobní mobilní itineráře s trasami, vstupy a rezervacemi."
+  />
 
-  <link rel="stylesheet" href="styles.css">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
 
-  <title>TripFlow</title>
-</head>
+  <meta
+    name="apple-mobile-web-app-status-bar-style"
+    content="black-translucent"
+  />
 
-<body>
+  <meta name="apple-mobile-web-app-title" content="TripFlow" />
 
-  <div id="app"></div>
+  ./manifest.webmanifest
 
-  <input
-    id="importFile"
-    type="file"
+  <linkns/icon.svg
+
+  <link
+    rel="icon"
+    href="./ rel="apple-touch-icon"
+    href="./icons/icon-192.png"
+  />
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <title>Trip    type="file"
     accept="application/json"
-    hidden>
+    hidden
+  />
 
-  app.jsscript>
+  <!-- Knihovna Supabase -->
+  https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2script>
 
+  <!-- Konfigurace konkrétního projektu Supabase -->
+  ./supabase-config.jsscript>
+
+  <!-- Hlavní aplikace TripFlow -->
+  ./app.jsscript>
 </body>
 </html>
