@@ -229,3 +229,5 @@ window.addEventListener("beforeinstallprompt", event => { event.preventDefault()
 window.installPWA = async () => { if (!state.deferred) return; state.deferred.prompt(); await state.deferred.userChoice; state.deferred = null; render(); };
 if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));
 render();
+
+console.log("Supabase client:", window.supabaseClient);
