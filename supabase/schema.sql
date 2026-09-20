@@ -220,7 +220,7 @@ begin
     'owner',
     nullif(lower(coalesce((select auth.jwt() ->> 'email'), '')), '')
   )
-  on conflict (trip_id, user_id) do update
+  on conflict on constraint tripflow_members_pkey do update
     set role = 'owner', email = coalesce(excluded.email, public.tripflow_members.email);
 
   return query
