@@ -1,4 +1,4 @@
-const CACHE_NAME = "tripflow-v4-password-auth-20260920";
+const CACHE_NAME = "tripflow-v4-trip-create-v2-20260920";
 const APP_SHELL = [
   "./",
   "./index.html",

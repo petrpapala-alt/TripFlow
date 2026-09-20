@@ -230,6 +230,51 @@ begin
 end;
 $$;
 
+-- V2 returns a single JSON value instead of named OUT columns. This avoids
+-- PL/pgSQL treating an OUT variable named trip_id as a competing column name.
+create or replace function public.tripflow_create_trip_v2(
+  p_trip_id uuid,
+  p_data jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_user_id uuid := (select auth.uid());
+  created_trip jsonb;
+begin
+  if current_user_id is null then
+    raise exception 'authentication_required';
+  end if;
+
+  insert into public.tripflow_trips (id, owner_id, data)
+  values (p_trip_id, current_user_id, p_data);
+
+  insert into public.tripflow_members (trip_id, user_id, role, email)
+  values (
+    p_trip_id,
+    current_user_id,
+    'owner',
+    nullif(lower(coalesce((select auth.jwt() ->> 'email'), '')), '')
+  )
+  on conflict on constraint tripflow_members_pkey do update
+    set role = 'owner', email = coalesce(excluded.email, public.tripflow_members.email);
+
+  select jsonb_build_object(
+    'id', t.id,
+    'data', t.data,
+    'version', t.version
+  )
+  into created_trip
+  from public.tripflow_trips as t
+  where t.id = p_trip_id and t.owner_id = current_user_id;
+
+  return created_trip;
+end;
+$$;
+
 create or replace function public.tripflow_accept_invitation(p_token uuid)
 returns uuid
 language plpgsql
@@ -280,9 +325,11 @@ $$;
 
 revoke all on function public.tripflow_save_trip(uuid, jsonb, bigint) from public;
 revoke all on function public.tripflow_create_trip(uuid, jsonb) from public;
+revoke all on function public.tripflow_create_trip_v2(uuid, jsonb) from public;
 revoke all on function public.tripflow_accept_invitation(uuid) from public;
 grant execute on function public.tripflow_save_trip(uuid, jsonb, bigint) to authenticated;
 grant execute on function public.tripflow_create_trip(uuid, jsonb) to authenticated;
+grant execute on function public.tripflow_create_trip_v2(uuid, jsonb) to authenticated;
 grant execute on function public.tripflow_accept_invitation(uuid) to authenticated;
 
 alter table public.tripflow_trips enable row level security;

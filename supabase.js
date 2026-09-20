@@ -117,7 +117,7 @@
       ? trip.id
       : crypto.randomUUID();
     const data = { ...trip, id };
-    let result = await client.rpc("tripflow_create_trip", {
+    let result = await client.rpc("tripflow_create_trip_v2", {
       p_trip_id: id,
       p_data: data
     });
@@ -127,8 +127,8 @@
     }
     if (result.error) throw result.error;
     const row = Array.isArray(result.data) ? result.data[0] : result.data;
-    const returnedData = row.trip_data || row.data;
-    const returnedVersion = row.trip_version ?? row.version;
+    const returnedData = row.data;
+    const returnedVersion = row.version;
     versions.set(id, Number(returnedVersion));
     roles.set(id, "owner");
     return { ...returnedData, id };
