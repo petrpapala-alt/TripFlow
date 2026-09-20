@@ -4,7 +4,7 @@ TripFlow je statická PWA pro GitHub Pages. Funguje local-first: změna se nejd�
 
 ## Co je implementované
 
-- přihlášení přes jednorázový e-mailový Magic Link,
+- přihlášení šestimístným jednorázovým e-mailovým kódem,
 - více cloudových cest na jednom účtu,
 - automatický první přesun lokálních cest do cloudu,
 - role `owner`, `editor` a `viewer` chráněné pomocí Row Level Security,
@@ -34,7 +34,20 @@ Publishable/anon klíč smí být ve frontendovém kódu. Přístup k datům zab
 
 Schéma používá vlastní názvy `tripflow_*`. Starší tabulka `trips`, která v projektu už existuje v jiné struktuře, zůstane nedotčená a nová aplikace ji nepoužívá.
 
-### 2. Povolené adresy pro Magic Link
+### 2. E-mailová šablona pro přihlašovací kód
+
+Kvůli oddělenému úložišti Safari a PWA na iOS se nepoužívá přímý Magic Link. V Supabase otevřete **Authentication → Email Templates → Magic Link** a tělo šablony změňte například na:
+
+```html
+<h2>Přihlášení do TripFlow</h2>
+<p>Váš jednorázový přihlašovací kód je:</p>
+<p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">{{ .Token }}</p>
+<p>Kód zadejte přímo v aplikaci TripFlow.</p>
+```
+
+Šablonu uložte. Aplikace kód ověřuje přímo uvnitř PWA, takže session zůstane ve správné instalaci.
+
+### 3. Povolené adresy
 
 V Supabase otevřete **Authentication → URL Configuration** a nastavte:
 
@@ -45,7 +58,7 @@ V Supabase otevřete **Authentication → URL Configuration** a nastavte:
 
 E-mail provider je v tomto projektu už zapnutý. Výchozí Supabase e-mailová služba stačí pro první testy; pro spolehlivé produkční doručování je vhodné později nastavit vlastní SMTP.
 
-### 3. Publikování
+### 4. Publikování
 
 Po nahrání změn do větve `main`:
 
@@ -57,9 +70,10 @@ Po nahrání změn do větve `main`:
 ## První přihlášení a migrace
 
 1. Otevřete ikonu účtu vpravo nahoře.
-2. Zadejte e-mail a otevřete přijatý odkaz na stejném zařízení.
-3. Pokud účet ještě nemá cloudové cesty, aplikace automaticky nahraje aktuální lokální cesty.
-4. Před migrací uloží lokální kopii také do `localStorage` pod klíčem `tripflow.preCloudBackup`.
+2. Zadejte e-mail a nechte si poslat šestimístný kód.
+3. Kód z e-mailu zadejte přímo do nainstalované aplikace.
+4. Pokud účet ještě nemá cloudové cesty, aplikace automaticky nahraje aktuální lokální cesty.
+5. Před migrací uloží lokální kopii také do `localStorage` pod klíčem `tripflow.preCloudBackup`.
 
 Pokud už účet cloudové cesty má, mají přednost ony. Lokální JSON lze kdykoli přidat přes **Nástroje → Import JSON**.
 
@@ -76,7 +90,7 @@ Pokud už účet cloudové cesty má, mají přednost ony. Lokální JSON lze kd
 python3 -m http.server 8080
 ```
 
-Potom otevřete `http://localhost:8080/`. Supabase Magic Link na localhost funguje jen tehdy, když je výše uvedená localhost adresa v Redirect URLs.
+Potom otevřete `http://localhost:8080/`.
 
 ## Známé limity
 

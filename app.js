@@ -416,21 +416,38 @@ window.showAccount = () => {
   }
   if (!isSignedIn()) {
     const invite = new URLSearchParams(location.search).has("invite") ? '<div class="note">Po přihlášení automaticky přijmeme pozvánku.</div>' : "";
-    modal(`<div class="spread"><h2>Přihlášení</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div>${invite}<p class="address">Pošleme vám jednorázový přihlašovací odkaz. Heslo nepotřebujete.</p><form onsubmit="sendMagicLink(event)"><label class="field"><span>E-mail</span><input type="email" name="email" required autocomplete="email"></label><button class="btn rust">Poslat odkaz</button></form>`);
+    modal(`<div class="spread"><h2>Přihlášení</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div>${invite}<p class="address">Pošleme vám šestimístný kód. Zadejte ho přímo tady, aby přihlášení zůstalo v nainstalované aplikaci.</p><form onsubmit="sendEmailCode(event)"><label class="field"><span>E-mail</span><input type="email" name="email" required autocomplete="email"></label><button class="btn rust">Poslat kód</button></form>`);
     return;
   }
   modal(`<div class="spread"><h2>Cloudový účet</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div><p><b>${escapeHtml(state.cloud.session.user.email)}</b></p><p class="address">${escapeHtml(state.cloud.message || "Data jsou uložená i lokálně a synchronizují se se Supabase.")}</p><div class="small-actions"><button class="btn" onclick="flushPending()">Synchronizovat teď</button><button class="btn secondary" onclick="signOut()">Odhlásit</button></div>`);
 };
 
-window.sendMagicLink = async event => {
+window.sendEmailCode = async event => {
   event.preventDefault();
   const button = event.submitter;
+  const email = String(new FormData(event.target).get("email") || "").trim();
   button.disabled = true; button.textContent = "Odesílám…";
   try {
-    await cloud().signIn(new FormData(event.target).get("email"));
-    event.target.innerHTML = '<div class="note">Odkaz je na cestě. Otevřete e-mail na tomto zařízení a klikněte na něj.</div>';
+    await cloud().signIn(email);
+    event.target.outerHTML = `<form onsubmit="verifyEmailCode(event)"><div class="note">Kód jsme poslali na ${escapeHtml(email)}.</div><input type="hidden" name="email" value="${escapeHtml(email)}"><label class="field otp-field"><span>Šestimístný kód</span><input name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus placeholder="123456"></label><div class="small-actions"><button class="btn rust">Přihlásit</button><button type="button" class="btn secondary" onclick="showAccount()">Zadat jiný e-mail</button></div></form>`;
+    qs("#modal input[name=token]")?.focus();
   } catch (error) {
-    toast(errorText(error), "error"); button.disabled = false; button.textContent = "Poslat odkaz";
+    toast(errorText(error), "error"); button.disabled = false; button.textContent = "Poslat kód";
+  }
+};
+
+window.verifyEmailCode = async event => {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const button = event.submitter;
+  button.disabled = true; button.textContent = "Ověřuji…";
+  try {
+    const session = await cloud().verifyEmailOtp(form.get("email"), form.get("token"));
+    state.cloud.session = session;
+    closeModal();
+    await loadCloudData();
+  } catch (error) {
+    toast(errorText(error), "error"); button.disabled = false; button.textContent = "Přihlásit";
   }
 };
 

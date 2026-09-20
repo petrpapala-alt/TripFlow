@@ -29,13 +29,6 @@
     return session.user;
   };
 
-  function redirectUrl() {
-    const current = new URL(window.location.href);
-    const invite = current.searchParams.get("invite");
-    const result = `${current.origin}${current.pathname}`;
-    return invite ? `${result}?invite=${encodeURIComponent(invite)}` : result;
-  }
-
   async function init(onEvent) {
     listener = typeof onEvent === "function" ? onEvent : listener;
     if (!client) {
@@ -56,9 +49,20 @@
   async function signIn(email) {
     const { error } = await requireClient().auth.signInWithOtp({
       email: String(email || "").trim(),
-      options: { emailRedirectTo: redirectUrl(), shouldCreateUser: true }
+      options: { shouldCreateUser: true }
     });
     if (error) throw error;
+  }
+
+  async function verifyEmailOtp(email, token) {
+    const result = await requireClient().auth.verifyOtp({
+      email: String(email || "").trim(),
+      token: String(token || "").replace(/\s/g, ""),
+      type: "email"
+    });
+    if (result.error) throw result.error;
+    session = result.data.session;
+    return session;
   }
 
   async function signOut() {
@@ -291,7 +295,7 @@
   }
 
   window.TripFlowCloud = {
-    configured, client, init, signIn, signOut, loadTrips, createTrip, importTrips,
+    configured, client, init, signIn, verifyEmailOtp, signOut, loadTrips, createTrip, importTrips,
     saveTrip, deleteTrip, setStopState, createInvitation, acceptInvitation,
     getMembers, updateMember, removeMember, listDocuments, uploadDocument,
     getDocumentUrl, deleteDocument, startRealtime, stopRealtime,
