@@ -156,6 +156,7 @@ const stopStatus = (stop, dayIndex = state.day) => {
 function errorText(error) {
   const message = error?.message || String(error || "Neznámá chyba");
   if (message.includes("relation") && message.includes("does not exist")) return "V Supabase ještě není nahrané databázové schéma.";
+  if (message.includes("tripflow_create_trip") && message.includes("schema cache")) return "V Supabase chybí aktuální databázová funkce. Spusťte znovu celý soubor supabase/schema.sql.";
   if (message.includes("Failed to fetch")) return "Cloud není dostupný. Změny zůstaly uložené v zařízení.";
   if (message.includes("Invalid login credentials")) return "Nesprávný e-mail nebo heslo.";
   if (message.includes("User already registered")) return "Účet s tímto e-mailem už existuje. Použijte přihlášení.";

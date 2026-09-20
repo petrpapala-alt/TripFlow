@@ -112,22 +112,26 @@
   }
 
   async function createTrip(trip) {
-    const user = requireUser();
+    requireUser();
     const id = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(trip.id)
       ? trip.id
       : crypto.randomUUID();
     const data = { ...trip, id };
-    let result = await client.from("tripflow_trips")
-      .insert({ id, owner_id: user.id, data })
-      .select("id,data,version").single();
+    let result = await client.rpc("tripflow_create_trip", {
+      p_trip_id: id,
+      p_data: data
+    });
     if (result.error?.code === "23505") {
       result = await client.from("tripflow_trips")
         .select("id,data,version").eq("id", id).single();
     }
     if (result.error) throw result.error;
-    versions.set(id, Number(result.data.version));
+    const row = Array.isArray(result.data) ? result.data[0] : result.data;
+    const returnedData = row.trip_data || row.data;
+    const returnedVersion = row.trip_version ?? row.version;
+    versions.set(id, Number(returnedVersion));
     roles.set(id, "owner");
-    return { ...result.data.data, id };
+    return { ...returnedData, id };
   }
 
   async function importTrips(trips) {

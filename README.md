@@ -32,6 +32,8 @@ Publishable/anon klíč smí být ve frontendovém kódu. Přístup k datům zab
 3. Zkopírujte celý obsah [`supabase/schema.sql`](./supabase/schema.sql), vložte jej do editoru a spusťte přes **Run**.
 4. Výsledkem musí být hláška o úspěšném dokončení bez chyby.
 
+Skript je bezpečné spustit znovu i po aktualizaci aplikace. Aktualizuje databázové funkce a pravidla bez smazání existujících cest.
+
 Schéma používá vlastní názvy `tripflow_*`. Starší tabulka `trips`, která v projektu už existuje v jiné struktuře, zůstane nedotčená a nová aplikace ji nepoužívá.
 
 ### 2. Nastavení přihlášení bez SMTP
