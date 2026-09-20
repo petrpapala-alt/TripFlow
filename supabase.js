@@ -9,7 +9,7 @@
   );
   const client = configured
     ? window.supabase.createClient(url, key, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
       })
     : null;
 
@@ -46,23 +46,36 @@
     return session;
   }
 
-  async function signIn(email) {
-    const { error } = await requireClient().auth.signInWithOtp({
+  async function signInWithPassword(email, password) {
+    const result = await requireClient().auth.signInWithPassword({
       email: String(email || "").trim(),
-      options: { shouldCreateUser: true }
-    });
-    if (error) throw error;
-  }
-
-  async function verifyEmailOtp(email, token) {
-    const result = await requireClient().auth.verifyOtp({
-      email: String(email || "").trim(),
-      token: String(token || "").replace(/\s/g, ""),
-      type: "email"
+      password: String(password || "")
     });
     if (result.error) throw result.error;
     session = result.data.session;
     return session;
+  }
+
+  async function signUpWithPassword(email, password) {
+    const result = await requireClient().auth.signUp({
+      email: String(email || "").trim(),
+      password: String(password || "")
+    });
+    if (result.error) throw result.error;
+    if (!result.data.session) {
+      throw new Error("Účet byl vytvořen, ale čeká na potvrzení e-mailem. V Supabase vypněte Confirm email a registraci zopakujte s jinou adresou, nebo uživatele potvrďte v Authentication → Users.");
+    }
+    session = result.data.session;
+    return session;
+  }
+
+  async function updatePassword(password) {
+    requireUser();
+    const { data, error } = await requireClient().auth.updateUser({
+      password: String(password || "")
+    });
+    if (error) throw error;
+    return data.user;
   }
 
   async function signOut() {
@@ -295,7 +308,7 @@
   }
 
   window.TripFlowCloud = {
-    configured, client, init, signIn, verifyEmailOtp, signOut, loadTrips, createTrip, importTrips,
+    configured, client, init, signInWithPassword, signUpWithPassword, updatePassword, signOut, loadTrips, createTrip, importTrips,
     saveTrip, deleteTrip, setStopState, createInvitation, acceptInvitation,
     getMembers, updateMember, removeMember, listDocuments, uploadDocument,
     getDocumentUrl, deleteDocument, startRealtime, stopRealtime,

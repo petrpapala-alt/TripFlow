@@ -4,7 +4,7 @@ TripFlow je statická PWA pro GitHub Pages. Funguje local-first: změna se nejd�
 
 ## Co je implementované
 
-- přihlášení šestimístným jednorázovým e-mailovým kódem,
+- registrace a přihlášení e-mailem a heslem přes Supabase Auth,
 - více cloudových cest na jednom účtu,
 - automatický první přesun lokálních cest do cloudu,
 - role `owner`, `editor` a `viewer` chráněné pomocí Row Level Security,
@@ -34,31 +34,19 @@ Publishable/anon klíč smí být ve frontendovém kódu. Přístup k datům zab
 
 Schéma používá vlastní názvy `tripflow_*`. Starší tabulka `trips`, která v projektu už existuje v jiné struktuře, zůstane nedotčená a nová aplikace ji nepoužívá.
 
-### 2. E-mailová šablona pro přihlašovací kód
+### 2. Nastavení přihlášení bez SMTP
 
-Kvůli oddělenému úložišti Safari a PWA na iOS se nepoužívá přímý Magic Link. V Supabase otevřete **Authentication → Email Templates → Magic Link** a tělo šablony změňte například na:
+1. V Supabase otevřete **Authentication → Sign In / Providers → Email** (v některých verzích rozhraní jen **Authentication → Providers → Email**).
+2. Nechte zapnuté přihlašování pomocí e-mailu.
+3. Vypněte **Confirm email**. Registrace pak vytvoří session okamžitě a neposílá potvrzovací odkaz.
+4. Pro vytvoření prvních účtů nechte zapnuté **Allow new users to sign up**.
+5. V TripFlow otevřete ikonu účtu, zvolte **Vytvořit účet** a založte účty pro všechny účastníky.
 
-```html
-<h2>Přihlášení do TripFlow</h2>
-<p>Váš jednorázový přihlašovací kód je:</p>
-<p style="font-size: 28px; font-weight: bold; letter-spacing: 4px;">{{ .Token }}</p>
-<p>Kód zadejte přímo v aplikaci TripFlow.</p>
-```
+Vlastní SMTP ani úprava e-mailové šablony nejsou pro tento tok potřeba. Po vytvoření všech známých účtů je u soukromé rodinné aplikace bezpečnější v Supabase vypnout **Allow new users to sign up**. Existující účty se budou dál normálně přihlašovat, ale nikdo další se nebude moci sám zaregistrovat.
 
-Šablonu uložte. Aplikace kód ověřuje přímo uvnitř PWA, takže session zůstane ve správné instalaci.
+Bez ověření e-mailu Supabase nemůže dokázat, že uživatel danou adresu skutečně vlastní. Proto nenechávejte veřejnou registraci dlouhodobě zapnutou, pokud používáte pozvánky omezené na konkrétní e-mail.
 
-### 3. Povolené adresy
-
-V Supabase otevřete **Authentication → URL Configuration** a nastavte:
-
-- **Site URL:** `https://petrpapala-alt.github.io/TripFlow/`
-- **Redirect URLs:**
-  - `https://petrpapala-alt.github.io/TripFlow/**`
-  - `http://localhost:8080/**`
-
-E-mail provider je v tomto projektu už zapnutý. Výchozí Supabase e-mailová služba stačí pro první testy; pro spolehlivé produkční doručování je vhodné později nastavit vlastní SMTP.
-
-### 4. Publikování
+### 3. Publikování
 
 Po nahrání změn do větve `main`:
 
@@ -70,8 +58,8 @@ Po nahrání změn do větve `main`:
 ## První přihlášení a migrace
 
 1. Otevřete ikonu účtu vpravo nahoře.
-2. Zadejte e-mail a nechte si poslat šestimístný kód.
-3. Kód z e-mailu zadejte přímo do nainstalované aplikace.
+2. Zvolte **Vytvořit účet**, zadejte e-mail a heslo o délce alespoň 8 znaků.
+3. Při dalších návštěvách se aplikace přihlásí automaticky. Pokud se ručně odhlásíte, přihlaste se stejným e-mailem a heslem.
 4. Pokud účet ještě nemá cloudové cesty, aplikace automaticky nahraje aktuální lokální cesty.
 5. Před migrací uloží lokální kopii také do `localStorage` pod klíčem `tripflow.preCloudBackup`.
 
@@ -97,4 +85,5 @@ Potom otevřete `http://localhost:8080/`.
 - Offline lze upravovat itinerář a stav zastávek, ale dokument nelze bez připojení nahrát ani nově otevřít.
 - Navštíveno/rezervováno se synchronizuje po samostatných zastávkách. Samotná struktura itineráře je verzovaný JSON; při velmi vzácné souběžné úpravě stejné cesty na dvou zařízeních aplikace zopakuje poslední lokální zápis. Pro malou rodinnou aplikaci je to rozumný kompromis, ne však model pro desítky současných editorů.
 - Service worker ukládá app shell a již navštívené GET zdroje, ne však kompletní obsah Supabase Storage.
-- Produkční e-mailové doručování je vhodné přepnout na vlastní SMTP a pozvánky vytvářet pro konkrétní e-mail.
+- Zapomenuté heslo zatím nelze obnovit e-mailem bez SMTP. Přihlášený uživatel si heslo může změnit v detailu účtu; správce může uživatele spravovat v **Authentication → Users**.
+- Při vypnutém **Confirm email** není vlastnictví e-mailové adresy ověřené. Po vytvoření požadovaných účtů proto doporučujeme vypnout veřejné registrace.

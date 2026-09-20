@@ -157,6 +157,11 @@ function errorText(error) {
   const message = error?.message || String(error || "Neznámá chyba");
   if (message.includes("relation") && message.includes("does not exist")) return "V Supabase ještě není nahrané databázové schéma.";
   if (message.includes("Failed to fetch")) return "Cloud není dostupný. Změny zůstaly uložené v zařízení.";
+  if (message.includes("Invalid login credentials")) return "Nesprávný e-mail nebo heslo.";
+  if (message.includes("User already registered")) return "Účet s tímto e-mailem už existuje. Použijte přihlášení.";
+  if (message.includes("Password should be")) return "Heslo nesplňuje pravidla nastavená v Supabase.";
+  if (message.includes("Signups not allowed")) return "Registrace nových účtů je v Supabase vypnutá.";
+  if (message.includes("Email not confirmed")) return "E-mail ještě není potvrzený. Potvrďte uživatele v Supabase, nebo vypněte Confirm email.";
   if (message.includes("invitation_email_mismatch")) return "Pozvánka je určená pro jiný e-mail.";
   if (message.includes("invitation_invalid_or_expired")) return "Pozvánka už byla použitá nebo vypršela.";
   return message;
@@ -415,39 +420,58 @@ window.showAccount = () => {
     return;
   }
   if (!isSignedIn()) {
-    const invite = new URLSearchParams(location.search).has("invite") ? '<div class="note">Po přihlášení automaticky přijmeme pozvánku.</div>' : "";
-    modal(`<div class="spread"><h2>Přihlášení</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div>${invite}<p class="address">Pošleme vám šestimístný kód. Zadejte ho přímo tady, aby přihlášení zůstalo v nainstalované aplikaci.</p><form onsubmit="sendEmailCode(event)"><label class="field"><span>E-mail</span><input type="email" name="email" required autocomplete="email"></label><button class="btn rust">Poslat kód</button></form>`);
+    showAuthForm("signin");
     return;
   }
-  modal(`<div class="spread"><h2>Cloudový účet</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div><p><b>${escapeHtml(state.cloud.session.user.email)}</b></p><p class="address">${escapeHtml(state.cloud.message || "Data jsou uložená i lokálně a synchronizují se se Supabase.")}</p><div class="small-actions"><button class="btn" onclick="flushPending()">Synchronizovat teď</button><button class="btn secondary" onclick="signOut()">Odhlásit</button></div>`);
+  modal(`<div class="spread"><h2>Cloudový účet</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div><p><b>${escapeHtml(state.cloud.session.user.email)}</b></p><p class="address">${escapeHtml(state.cloud.message || "Data jsou uložená i lokálně a synchronizují se se Supabase.")}</p><div class="small-actions"><button class="btn" onclick="flushPending()">Synchronizovat teď</button><button class="btn secondary" onclick="showPasswordChange()">Změnit heslo</button><button class="btn secondary" onclick="signOut()">Odhlásit</button></div>`);
 };
 
-window.sendEmailCode = async event => {
-  event.preventDefault();
-  const button = event.submitter;
-  const email = String(new FormData(event.target).get("email") || "").trim();
-  button.disabled = true; button.textContent = "Odesílám…";
-  try {
-    await cloud().signIn(email);
-    event.target.outerHTML = `<form onsubmit="verifyEmailCode(event)"><div class="note">Kód jsme poslali na ${escapeHtml(email)}.</div><input type="hidden" name="email" value="${escapeHtml(email)}"><label class="field otp-field"><span>Šestimístný kód</span><input name="token" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required autofocus placeholder="123456"></label><div class="small-actions"><button class="btn rust">Přihlásit</button><button type="button" class="btn secondary" onclick="showAccount()">Zadat jiný e-mail</button></div></form>`;
-    qs("#modal input[name=token]")?.focus();
-  } catch (error) {
-    toast(errorText(error), "error"); button.disabled = false; button.textContent = "Poslat kód";
-  }
+window.showAuthForm = (mode = "signin") => {
+  const signup = mode === "signup";
+  const invite = new URLSearchParams(location.search).has("invite") ? '<div class="note">Po přihlášení automaticky přijmeme pozvánku.</div>' : "";
+  const confirmation = signup ? '<label class="field"><span>Heslo znovu</span><input type="password" name="passwordConfirm" minlength="8" required autocomplete="new-password"></label>' : "";
+  const note = signup ? '<div class="note">Použijte alespoň 8 znaků. Registrace funguje bez e-mailu jen tehdy, když je v Supabase vypnuté <b>Confirm email</b>.</div>' : '<p class="address">Přihlášení zůstane uložené přímo v této instalaci aplikace.</p>';
+  modal(`<div class="spread"><h2>${signup ? "Vytvořit účet" : "Přihlášení"}</h2><button class="btn secondary" onclick="closeModal()">Zavřít</button></div>${invite}${note}<form onsubmit="submitPasswordAuth(event, '${mode}')"><label class="field"><span>E-mail</span><input type="email" name="email" required autocomplete="email" autofocus></label><label class="field"><span>Heslo</span><input type="password" name="password" minlength="8" required autocomplete="${signup ? "new-password" : "current-password"}"></label>${confirmation}<div class="small-actions"><button class="btn rust">${signup ? "Vytvořit účet" : "Přihlásit"}</button><button type="button" class="btn secondary" onclick="showAuthForm('${signup ? "signin" : "signup"}')">${signup ? "Už mám účet" : "Vytvořit účet"}</button></div></form>`);
 };
 
-window.verifyEmailCode = async event => {
+window.submitPasswordAuth = async (event, mode) => {
   event.preventDefault();
   const form = new FormData(event.target);
   const button = event.submitter;
-  button.disabled = true; button.textContent = "Ověřuji…";
+  const password = String(form.get("password") || "");
+  if (mode === "signup" && password !== String(form.get("passwordConfirm") || "")) {
+    toast("Zadaná hesla se neshodují.", "error");
+    return;
+  }
+  button.disabled = true; button.textContent = mode === "signup" ? "Vytvářím…" : "Přihlašuji…";
   try {
-    const session = await cloud().verifyEmailOtp(form.get("email"), form.get("token"));
+    const session = mode === "signup"
+      ? await cloud().signUpWithPassword(form.get("email"), password)
+      : await cloud().signInWithPassword(form.get("email"), password);
     state.cloud.session = session;
     closeModal();
     await loadCloudData();
   } catch (error) {
-    toast(errorText(error), "error"); button.disabled = false; button.textContent = "Přihlásit";
+    toast(errorText(error), "error");
+    button.disabled = false; button.textContent = mode === "signup" ? "Vytvořit účet" : "Přihlásit";
+  }
+};
+
+window.showPasswordChange = () => modal(`<div class="spread"><h2>Změna hesla</h2><button class="btn secondary" onclick="showAccount()">Zpět</button></div><form onsubmit="changePassword(event)"><label class="field"><span>Nové heslo</span><input type="password" name="password" minlength="8" required autocomplete="new-password"></label><label class="field"><span>Nové heslo znovu</span><input type="password" name="passwordConfirm" minlength="8" required autocomplete="new-password"></label><button class="btn rust">Uložit heslo</button></form>`);
+
+window.changePassword = async event => {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const password = String(form.get("password") || "");
+  if (password !== String(form.get("passwordConfirm") || "")) { toast("Zadaná hesla se neshodují.", "error"); return; }
+  const button = event.submitter;
+  button.disabled = true; button.textContent = "Ukládám…";
+  try {
+    await cloud().updatePassword(password);
+    showAccount();
+    toast("Heslo bylo změněno.", "success");
+  } catch (error) {
+    toast(errorText(error), "error"); button.disabled = false; button.textContent = "Uložit heslo";
   }
 };
 
